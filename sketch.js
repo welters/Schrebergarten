@@ -17,7 +17,7 @@ function setup() {
 	copyGardens = [];
 	
 	displaySize = 5;
-	createCanvas(400, 200);
+	createCanvas(windowWidth, windowHeight);
 	document.getElementById('defaultCanvas0').style.visibility = 'visible';
 	background(100);
 	
@@ -28,36 +28,25 @@ function algo() {
 	let p = [0, 1, 2, 3];
 
 	or = perm(p);
-	
-	
-	// or = [
-	// 	[0,1,2,3],
-	// 	[1,2,0,3],
-	// 	[1,3,2,0],
-	// 	[3,2,1,0],
-	// 	[2,3,1,0],
-	// 	[3,0,2,1],
-	// 	[0,2,3,1]
-	// ];
 
 	for (let o in or) {
 		
 		areas.push([		//manually set gardens
-			{size : createVector(10, 15), pos : undefined, set : false},
-			{size : createVector(10, 15), pos : undefined, set : false},
-			{size : createVector(15, 10), pos : undefined, set : false},
-			{size : createVector(15, 10), pos : undefined, set : false}
+			{size : createVector(25, 15), pos : undefined, set : false},
+			{size : createVector(15, 30), pos : undefined, set : false},
+			{size : createVector(15, 25), pos : undefined, set : false},
+			{size : createVector(25, 20), pos : undefined, set : false}
 		]);
 		corners = undefined;
 		corners = [];
 		corners.push(createVector(0,0));
 
-		for (let z of or[o]) {					//set gardens in given order
+		for (let z of or[o]) {					//set position of gardens in given order
 			setElement(z,o);
 		}
 
 		for (let k in areas) {
-		 	if ((checkSize(areas[k])[0] *checkSize(areas[k])[1]) >= (checkSize(areas[o])[0] *checkSize(areas[o])[1])) {
+		 	if (checkSize(areas[k], "size") >= checkSize(areas[o], "size")) {
 				areas.splice(k, 0, areas[o]);
 				areas.pop();
 		 		break;
@@ -65,38 +54,35 @@ function algo() {
 		}
 
 	}
-	let cons = 0;
-	console.table(areas);
+	let cons = 22;
+	//console.table(areas);
 	display(areas[cons]);
-	console.log(checkSize(areas[cons])[0] *checkSize(areas[cons])[1]);
+	console.log(checkSize(areas[cons], "size"));
 }
 
 function setElement(g, ind) {
-	let minSize = Infinity;
-	let delCorner = undefined;
-	areas[ind][g].set = true;
-	for (let c in corners) {
-		//console.log(corners, c, corners[c]);
-		areas[ind][g].pos = corners[c];
-		if (checkSize(areas[ind])[0] *checkSize(areas[ind])[1] < minSize  && noOverlap(areas[ind], areas[ind][g])) {
-			minSize = checkSize(areas[ind])[0] *checkSize(areas[ind])[1];
+	let minSize = Infinity;			//defines and sets the minSize to infinity so the the firstly checked size is always smaller
+	let delCorner = undefined;		//later the corner, which will be deleted and the position of the garden is set to
+	let aI = areas[ind];			//just to short the code
+	aI[g].set = true;
+	for (let c in corners) {		//loops through all the corners (possible positions for the garden)
+		aI[g].pos = corners[c];		//position of garden set to one of the corners
+		if (checkSize(aI, "size") < minSize  && noOverlap(aI, aI[g])) {
+			minSize = checkSize(aI, "size");
 			delCorner = c;
 		}
 	}
-	areas[ind][g].pos = corners[delCorner];
-	//console.log("areas: " + ind + ", garden: " + g + ", posX: " +  areas[ind][g].pos.x + ", posY:" + areas[ind][g].pos.y);
-	corners.splice(delCorner, 1);
-	corners.push(createVector(areas[ind][g].pos.x + areas[ind][g].size.x, areas[ind][g].pos.y));
-	corners.push(createVector(areas[ind][g].pos.x, areas[ind][g].pos.y + areas[ind][g].size.y));
+	aI[g].pos = corners[delCorner];	//podition id now the one with the less used space
+	corners.splice(delCorner, 1);	//corner has to be deleted for the next gardens
+	corners.push(createVector(aI[g].pos.x + aI[g].size.x, aI[g].pos.y));	//push new corners to the edges of the garden we just set
+	corners.push(createVector(aI[g].pos.x, aI[g].pos.y + aI[g].size.y));	//	"	"
 }
 
 
-function noOverlap(are, g) {
-	for (let a of are) {
-		if (a == g) continue;
-		if (a.pos != undefined) {
-			//console.log("a--  posX: " +  a.pos.x + ", posY:" + a.pos.y + ", sizeX: " + a.size.x + ", sizeY: " + a.size.y);
-			//console.log("g--  posX: " +  g.pos.x + ", posY:" + g.pos.y + ", sizeX: " + g.size.x + ", sizeY: " + g.size.y);
+function noOverlap(land, g) {		//checks for a possible overlapping of two gardens
+	for (let a of land) {			//loops trough the gardens
+		if (a == g) continue;		//don't compare the same object
+		if (a.pos != undefined) {	//garden has to have a position
 			if (g.pos.y < (a.pos.y +a.size.y) && (g.pos.x +g.size.x) > a.pos.x && g.pos.x < (a.pos.x +a.size.x)) return(false);
 			if (g.pos.x < (a.pos.x +a.size.x) && (g.pos.y +g.size.y) > a.pos.y && g.pos.y < (a.pos.y +a.size.y)) return(false);
 		}
@@ -105,26 +91,23 @@ function noOverlap(are, g) {
 }
 
 
-function checkSize(a) {
-	let edges = [];
-	let r, b; // the most right and bottom edge
+function checkSize(a, ret) {
+	let edges = [];					//Array for all edges
+	let r, b;						//the most right and bottom edge
 
-	for (let g of a) {
-		if (g != undefined) {
-			if (g.set) {
-			edges.push(g.pos.copy().add(g.size));
-			}
-		}
+	for (let g of a) {				//loops through all the gardens, which are set
+		if (g.set) edges.push(g.pos.copy().add(g.size));
+
 	}
 
-	//right edge
+	//find the most right edge and save in variable r
 	r = 0;
-	for (let e in edges) {
+	for (let e in edges) {			
 		if (edges[e].x > r) {
 			r = edges[e].x;
 		}
 	}
-	//bottom edge
+	//find the most bottom edge and save in variable b
 	b = 0;
 	for (let e in edges) {
 		if (edges[e].y > b) {
@@ -132,10 +115,12 @@ function checkSize(a) {
 		}
 	}
 	
-	return([r, b]);
+	if (ret == "size") return(r *b);	//return the size of the rectangle arround the gardens
+	if (ret == "r") return(r);			//return the value of the most right edge
+	if (ret == "b") return(b);			//return the value of the most bottom edge
 }
 
-function perm(xs) {
+function perm(xs) {						//algorithm to get all possible orders to set the gardens (permutations)
   let ret = [];
 
   for (let i = 0; i < xs.length; i = i + 1) {
@@ -153,14 +138,14 @@ function perm(xs) {
 }
 
 function display(ar) {		//displays the area of all gardens
-	background(100);
-	translate(width /2 -(checkSize(ar)[0] /2 *displaySize), height /2 -(checkSize(ar)[1] /2 *displaySize));
+	background(100);		
+	let tp = createVector(width /2 -(checkSize(ar, "r") /2 *displaySize), height /2 -(checkSize(ar, "b") /2 *displaySize));
 	fill(255, 0, 0);
-	rect(0, 0, checkSize(ar)[0] *displaySize, checkSize(ar)[1] *displaySize)
+	rect(tp.x, tp.y, checkSize(ar, "r") *displaySize, checkSize(ar, "b") *displaySize)
 	fill(0, 255, 0);
 	for (let g of ar){
 		if (g.set) {
-			rect(g.pos.x *displaySize, g.pos.y *displaySize, g.size.x *displaySize, g.size.y *displaySize);
+			rect(tp.x +g.pos.x *displaySize, tp.y +g.pos.y *displaySize, g.size.x *displaySize, g.size.y *displaySize);
 		}
 	}
 
