@@ -1,7 +1,9 @@
 'use strict'
-let gardens, corners, areas, or, sort, copyGardens;
+let gardens, xVal, maxYVal, areas, or, sort, copyGardens;
 let sz, ps;
 let displaySize;
+
+let minSize;
 
 function setup() {
 	gardens = [		//manually set gardens
@@ -12,9 +14,7 @@ function setup() {
 	];
 	
 	areas = [];				//Array for areas with all different
-	corners = [];			//Array for the corners
 	or = [];					//Array of strings for the order the gardens are set
-	copyGardens = [];
 	
 	displaySize = 5;
 	createCanvas(windowWidth, windowHeight);
@@ -31,19 +31,14 @@ function algo() {
 
 	for (let o in or) {
 		
-		areas.push([		//manually set gardens
-			{size : createVector(25, 15), pos : undefined, set : false},
-			{size : createVector(15, 30), pos : undefined, set : false},
-			{size : createVector(15, 25), pos : undefined, set : false},
-			{size : createVector(25, 20), pos : undefined, set : false}
-		]);
-		corners = undefined;
-		corners = [];
-		corners.push(createVector(0,0));
+		xVal = [];
+		xVal.push(0);
+		maxYVal = 0;
+		minSize = Infinity;	
+		areas.push([]);
+		areas[o].push(createVector(0, 0));
+		setElement(0, o);		//set position of gardens in given order
 
-		for (let z of or[o]) {					//set position of gardens in given order
-			setElement(z,o);
-		}
 
 		for (let k in areas) {
 		 	if (checkSize(areas[k], "size") >= checkSize(areas[o], "size")) {
@@ -60,34 +55,43 @@ function algo() {
 	console.log(checkSize(areas[cons], "size"));
 }
 
-function setElement(g, ind) {
-	let minSize = Infinity;			//defines and sets the minSize to infinity so the the firstly checked size is always smaller
-	let delCorner = undefined;		//later the corner, which will be deleted and the position of the garden is set to
-	let aI = areas[ind];			//just to short the code
-	aI[g].set = true;
-	for (let c in corners) {		//loops through all the corners (possible positions for the garden)
-		aI[g].pos = corners[c];		//position of garden set to one of the corners
-		if (checkSize(aI, "size") < minSize  && noOverlap(aI, aI[g])) {
-			minSize = checkSize(aI, "size");
-			delCorner = c;
+function setElement(i, o) {
+	let yVal;
+	let g = or[o][i];
+	for (let x of xVal) {
+		yVal = findYVal(gardens[g], x);
+		gardens[g].pos = createVector(x, yVal);
+		gardens[g].set = true;
+		xVal.push(gardens[g].pos.x +gardens[g].size.x);
+		if (or[o][i+1] != undefined) {
+			setElement(i+1)
+		} else {
+			if (minSize >= checkSize(gardens, "size")) {
+				minSize = checkSize(gardens, "size");
+				areas[o].push(gardens[g].pos.copy());
+			}
 		}
+		gardens[g].pos = undefined;
+		gardens[g].set = false;
+		
 	}
-	aI[g].pos = corners[delCorner];	//podition id now the one with the less used space
-	corners.splice(delCorner, 1);	//corner has to be deleted for the next gardens
-	corners.push(createVector(aI[g].pos.x + aI[g].size.x, aI[g].pos.y));	//push new corners to the edges of the garden we just set
-	corners.push(createVector(aI[g].pos.x, aI[g].pos.y + aI[g].size.y));	//	"	"
+	
 }
 
-
-function noOverlap(land, g) {		//checks for a possible overlapping of two gardens
-	for (let a of land) {			//loops trough the gardens
-		if (a == g) continue;		//don't compare the same object
-		if (a.pos != undefined) {	//garden has to have a position
-			if (g.pos.y < (a.pos.y +a.size.y) && (g.pos.x +g.size.x) > a.pos.x && g.pos.x < (a.pos.x +a.size.x)) return(false);
-			if (g.pos.x < (a.pos.x +a.size.x) && (g.pos.y +g.size.y) > a.pos.y && g.pos.y < (a.pos.y +a.size.y)) return(false);
+function findYVal(gard, xV) {
+	for (let y = yVal; y >= 0; y--) {
+		for (let g of gardens) {
+			if ((yVal <= g.pos.y +g.size.x) && (
+			(xV < g.pos.x +g.size.x && xV >= g.pos.x)||
+			(xV +gard.size.x <= g.pos.x +g.size.x && xV +gard.size.x > g.pos.x)||
+			(g.pos.x <= xV +gard.size.x && g.pos.x > xV)||
+			(g.pos.x +g.size.x < xV +gard.size.x && g.pos.x +g.size.x >= xV)
+			)) {
+				return(y);
+			}
 		}
 	}
-	return(true);
+	return(0);
 }
 
 
