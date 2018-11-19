@@ -2,6 +2,7 @@
 let gardens, xVal, maxYVal, areas, or, sort, copyGardens;
 let sz, ps;
 let displaySize;
+let yVal;
 
 let minSize;
 
@@ -34,19 +35,9 @@ function algo() {
 		xVal = [];
 		xVal.push(0);
 		maxYVal = 0;
-		minSize = Infinity;	
+		minSize = Infinity;
 		areas.push([]);
-		areas[o].push(createVector(0, 0));
 		setElement(0, o);		//set position of gardens in given order
-
-
-		for (let k in areas) {
-		 	if (checkSize(areas[k], "size") >= checkSize(areas[o], "size")) {
-				areas.splice(k, 0, areas[o]);
-				areas.pop();
-		 		break;
-		 	}
-		}
 
 	}
 	let cons = 22;
@@ -56,7 +47,7 @@ function algo() {
 }
 
 function setElement(i, o) {
-	let yVal;
+	yVal = 0;
 	let g = or[o][i];
 	for (let x of xVal) {
 		yVal = findYVal(gardens[g], x);
@@ -64,13 +55,14 @@ function setElement(i, o) {
 		gardens[g].set = true;
 		xVal.push(gardens[g].pos.x +gardens[g].size.x);
 		if (or[o][i+1] != undefined) {
-			setElement(i+1)
+			setElement(i+1, o);
 		} else {
 			if (minSize >= checkSize(gardens, "size")) {
 				minSize = checkSize(gardens, "size");
-				areas[o].push(gardens[g].pos.copy());
+				areas[o] = gardens.slice();
 			}
 		}
+		xVal.pop();
 		gardens[g].pos = undefined;
 		gardens[g].set = false;
 		
@@ -79,15 +71,17 @@ function setElement(i, o) {
 }
 
 function findYVal(gard, xV) {
-	for (let y = yVal; y >= 0; y--) {
+	for (let y = maxYVal; y >= 0; y--) {
 		for (let g of gardens) {
-			if ((yVal <= g.pos.y +g.size.x) && (
-			(xV < g.pos.x +g.size.x && xV >= g.pos.x)||
-			(xV +gard.size.x <= g.pos.x +g.size.x && xV +gard.size.x > g.pos.x)||
-			(g.pos.x <= xV +gard.size.x && g.pos.x > xV)||
-			(g.pos.x +g.size.x < xV +gard.size.x && g.pos.x +g.size.x >= xV)
-			)) {
-				return(y);
+			if (g.set) {
+				if ((yVal <= g.pos.y +g.size.x) && (
+				(xV < g.pos.x +g.size.x && xV >= g.pos.x)||
+				(xV +gard.size.x <= g.pos.x +g.size.x && xV +gard.size.x > g.pos.x)||
+				(g.pos.x <= xV +gard.size.x && g.pos.x > xV)||
+				(g.pos.x +g.size.x < xV +gard.size.x && g.pos.x +g.size.x >= xV)
+				)) {
+					return(y);
+				}
 			}
 		}
 	}
