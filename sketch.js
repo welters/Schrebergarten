@@ -6,7 +6,7 @@ let minSize;
 let displayArea, displayGardenList;
 
 function setup() {
-	gardens = [		//manually set gardens
+	gardens = [		//enter size of gardens here in the Vector for the size
 		{size : createVector(15, 25), pos : undefined, set : false},
 		{size : createVector(30, 15), pos : undefined, set : false},
 		{size : createVector(25, 15), pos : undefined, set : false},
